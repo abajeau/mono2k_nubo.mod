@@ -1,11 +1,13 @@
 # NUBO.MOD (a fork of MONO2K)
 
 NUBO.MOD: a performance-first fork of MONO2K for the M-VAVE FM-1. Takes an already great groovebox closer to the
-Elektron flow: simpler, more intuitive controls, Control All, live-recorded trigless p-locks, a two-stage panic and
-more. Built for my own use, shared as is.
+Elektron flow: simpler, more intuitive controls, Control All, live-recorded trigless p-locks, a battery indicator, a two-stage
+panic and more. Built for my own use, shared as is.
 
 **What it changes** (each in full, with how to use it: [NUBO.md](NUBO.md)):
 
+- **A battery indicator.** MONO2K shows no battery charge on the FM-1; NUBO.MOD does: `B99` / `B60` / `B30` in the
+  header of the GLO page, read from the battery's voltage and smoothed, so you know before it dies mid-set.
 - **Control All:** in GRID, hold OCT+ and turn a knob: the parameter moves on every track at once, each from its own
   value (SYN, AMP, FILT, FX, LFO, HOME's level and pitch); recorded as locks under REC.
 - **Trigless p-locks:** a knob recorded live on a step without a note locks it; the note going on takes it with no
@@ -19,7 +21,7 @@ more. Built for my own use, shared as is.
 - **Simpler screens and keys:** no pattern names (HOME lights the patterns that have trigs), no "project" on the
   FM-1, F#5 no longer mutes in GRID, clearer hints.
 - **Dim key LEDs:** two dim levels added to the FM-1's LED driver.
-- **A new splash and the battery on GLO** (`B99` / `B60` / `B30`).
+- **A new splash:** no animation, readable at once, dark in both themes.
 
 **Install:** build the package ([NUBO.md](NUBO.md), "Build and flash") and flash it with
 [M-Flasher](https://github.com/jvitkauskas/m-flasher): NUBO.MOD is flashed and backed up with it. Back up first.

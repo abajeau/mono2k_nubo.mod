@@ -4,6 +4,11 @@ NUBO.MOD is a modified version of [MONO2K](https://github.com/InigoHernandez/mon
 M-VAVE FM-1, on MONO2K v1.13 (GPL-3.0, as the original). Everything below is what differs from MONO2K; the rest is
 MONO2K as its author made it.
 
+## Battery indicator
+
+- **MONO2K shows no battery charge on the FM-1; NUBO.MOD does.** Open GLO: the header shows `B99`, `B60` or `B30` by
+  the tempo, from the battery's voltage (the ADC's battery channel), smoothed so it does not jump.
+
 ## Amp envelope
 
 - **RELEASE OFF — a drone.** AMP 1, REL turned to zero reads `OFF`: the note does not let go after its end; the
@@ -77,7 +82,6 @@ MONO2K as its author made it.
 
 - **Splash:** no animation, the finished frame at once for 2.1 s, dark in both themes; NUBO.MOD in a pixel face
   under MONO2K; the version (`--release` below).
-- **Battery on GLO:** in the header by the tempo, `B99` / `B60` / `B30`.
 - **Dim key LEDs (new in the FM-1 driver):** two levels, 10 % (steps with locks alone) and 20 % (the length keys,
   patterns with trigs on HOME): a LED lit one or two frames of the scan in ten.
 
