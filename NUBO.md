@@ -81,12 +81,13 @@ MONO2K as its author made it.
 - **Dim key LEDs (new in the FM-1 driver):** two levels, 10 % (steps with locks alone) and 20 % (the length keys,
   patterns with trigs on HOME): a LED lit one or two frames of the scan in ten.
 
-## Build
+## Build and flash
 
 ```sh
 python tools/fm1/build.py --release 1.13-6n
 ```
 
 The package is `build/fm1/mono2k-1.13-6n.fwsc` (MONO2K's build, its toolchain as the main README says). The
-`--release X.Y-Nn` suffix shows on the splash and the update screen. `web/firmware/mono2k.fwsc` in this repository
+`--release X.Y-Nn` suffix shows on the splash and the update screen. Flash it with [M-Flasher](https://github.com/jvitkauskas/m-flasher), which also backs up the whole flash first.
+`web/firmware/mono2k.fwsc` in this repository
 is MONO2K's own package, not NUBO.MOD.

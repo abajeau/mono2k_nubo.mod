@@ -4,8 +4,27 @@ NUBO.MOD: a performance-first fork of MONO2K for the M-VAVE FM-1. Takes an alrea
 Elektron flow: simpler, more intuitive controls, Control All, live-recorded trigless p-locks, a two-stage panic and
 more. Built for my own use, shared as is.
 
-**What it changes, and how to use it: [NUBO.md](NUBO.md).** A modified version of MONO2K by Inigo Hernandez
-(GPL-3.0, as the original); based on MONO2K v1.13. Not MONO2K's release: report its issues here, not to MONO2K.
+**What it changes** (each in full, with how to use it: [NUBO.md](NUBO.md)):
+
+- **Control All:** in GRID, hold OCT+ and turn a knob: the parameter moves on every track at once, each from its own
+  value (SYN, AMP, FILT, FX, LFO, HOME's level and pitch); recorded as locks under REC.
+- **Trigless p-locks:** a knob recorded live on a step without a note locks it; the note going on takes it with no
+  retrigger. In GRID such steps are underlined and their keys lit dim; holding one shows its locks and blinks the
+  page buttons of the sections they are in.
+- **Two-stage panic:** SEQ + white 10 cuts everything but the reverb's tail; again, silence.
+- **Clear a track's locks:** SEQ + white 9.
+- **RELEASE OFF is a drone:** the note never lets go; STOP silences it.
+- **No autosave:** the flash is written only by SAVE while stopped (`STOP TO SAVE` while playing).
+- **Pattern length on the page keys:** in GRID, black 7–10 lit dim; held, 16 / 32 / 48 / 64 steps.
+- **Simpler screens and keys:** no pattern names (HOME lights the patterns that have trigs), no "project" on the
+  FM-1, F#5 no longer mutes in GRID, clearer hints.
+- **Dim key LEDs:** two dim levels added to the FM-1's LED driver.
+- **A new splash and the battery on GLO** (`B99` / `B60` / `B30`).
+
+**Install:** build the package ([NUBO.md](NUBO.md), "Build") and flash it with
+[M-Flasher](https://github.com/jvitkauskas/m-flasher): NUBO.MOD is flashed and backed up with it. Back up first.
+
+A modified version of MONO2K by Inigo Hernandez (GPL-3.0, as the original); based on MONO2K v1.13. Not MONO2K's release: report its issues here, not to MONO2K.
 The rest of this README is MONO2K's own.
 
 ---
