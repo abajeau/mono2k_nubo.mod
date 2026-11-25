@@ -21,7 +21,7 @@ more. Built for my own use, shared as is.
 - **Dim key LEDs:** two dim levels added to the FM-1's LED driver.
 - **A new splash and the battery on GLO** (`B99` / `B60` / `B30`).
 
-**Install:** build the package ([NUBO.md](NUBO.md), "Build") and flash it with
+**Install:** build the package ([NUBO.md](NUBO.md), "Build and flash") and flash it with
 [M-Flasher](https://github.com/jvitkauskas/m-flasher): NUBO.MOD is flashed and backed up with it. Back up first.
 
 A modified version of MONO2K by Inigo Hernandez (GPL-3.0, as the original); based on MONO2K v1.13. Not MONO2K's release: report its issues here, not to MONO2K.
