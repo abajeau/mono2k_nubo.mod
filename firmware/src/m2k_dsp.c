@@ -106,6 +106,7 @@ static uint32_t fg_at(const uint32_t *T, int32_t pos)
 typedef struct {
     uint8_t note, gate, vel, sounding, slide, let_go;   /* let_go: a key or a MIDI note-off, not the sequencer */
     uint8_t dip;                       /* blocks left of the last note's fall to silence before an attack (voice_trig) */
+    uint8_t hush;                      /* the fork: the sequencer stopped -- the note releases even at REL OFF (its drone) */
     int32_t pitch, ptarget;            /* 1/64 semitones */
     uint8_t astage, fstage;            /* the amp's 1 attack 2 hold 3 decay (and sustain) 4 release; the filter's 1 attack
                                         * 2 decay (and sustain) 3 release */
@@ -1343,6 +1344,10 @@ static uint32_t atk_from(uint32_t lv)
 
 #define PARK_N 8                       /* the CPU guard's fade, blocks: 2.9 ms, one FM-1 render */
 
+/* the fork: REL OFF (0) keeps a note past its note-off (a drone), unless the sequencer stopped (voice_hush): then it
+ * releases at REL 0's own time, the shortest */
+#define REL_ON(t) ((t)->eff[P_REL] || (t)->hush)
+
 /* the filter's sustain level, FSUS's share of full (Q30): v / 127 at P8's Q8 (127 x 256 x 33026 under 2^30) */
 static inline uint32_t fsus_of(int32_t fs8) { return (uint32_t)fs8 * 33026u; }
 
@@ -1376,7 +1381,7 @@ static __attribute__((noinline)) void env_adsr(trk_t *t)
     switch (t->astage) {
     case 1:
         if (t->dip) { t->aenv -= t->aenv / t->dip--; break; }   /* the last note out first (voice_trig) */
-        if (s8 && end) { t->astage = 4; break; }
+        if (s8 && end && REL_ON(t)) { t->astage = 4; break; }       /* (the fork: REL OFF holds on -> drone) */
         t->aph += T_AATK_INC[t->eff[P_ATK]];
         t->aenv = t->eff[P_ATK] ? mulu_hi(t->aph, t->aph, 30) : t->aph;
         if (t->aph >= (1u << 30)) {
@@ -1387,12 +1392,13 @@ static __attribute__((noinline)) void env_adsr(trk_t *t)
         }
         break;
     case 2:
-        if (t->hold < 0) { if (!t->gate) t->astage = 4; }
-        else if (t->let_go || (s8 && end)) t->astage = 4;
+        if (t->hold < 0) { if (!t->gate) t->astage = REL_ON(t) ? 4 : 3; }   /* (the fork: REL OFF -> on to the decay) */
+        else if ((t->let_go || (s8 && end)) && REL_ON(t)) t->astage = 4;
         else if (t->hold-- <= 0) t->astage = 3;
         break;
     case 3: {
-        if (t->let_go || (s8 && end)) { t->astage = 4; break; }
+        if ((t->let_go || (s8 && end)) && REL_ON(t)) { t->astage = 4; break; }   /* (the fork: REL OFF: the decay to the
+                                                                                 * sustain goes on, held -> drone) */
         int32_t d8 = P8(t, P_DEC);
         if (s8) {                      /* toward the sustain, s + (env - s) x DEC's coefficient, either way (an LFO or a
                                         * lock may move s); there, held */
@@ -1403,7 +1409,7 @@ static __attribute__((noinline)) void env_adsr(trk_t *t)
             break;
         }
         if (d8 < 127 * 256) t->aenv = mulu_hi(t->aenv, tq_u32(T_ADEC_COEF, d8), 31);
-        else if (!t->gate) t->astage = 4;
+        else if (!t->gate && REL_ON(t)) t->astage = 4;
         if (t->aenv < (1u << 15)) { t->aenv = 0; t->astage = 0; }
         break;
     }
@@ -1459,15 +1465,16 @@ static void env_block(trk_t *t)
         }
         break;
     case 2:
-        if (t->hold < 0) { if (!t->gate) t->astage = 4; }
-        else if (t->let_go) t->astage = 4;                  /* a key let go ends the hold, as on the Monomachine */
+        if (t->hold < 0) { if (!t->gate) t->astage = REL_ON(t) ? 4 : 3; }   /* HOLD=INF: note-off -> RELEASE; REL=OFF (0) -> DECAY
+                                                                               * (the fork: DEC=INF there holds -> drone) */
+        else if (t->let_go && REL_ON(t)) t->astage = 4;                      /* a key let go -> RELEASE; REL=OFF: the note keeps sounding */
         else if (t->hold-- <= 0) t->astage = 3;
         break;
     case 3: {
-        if (t->let_go) { t->astage = 4; break; }            /* and the decay */
+        if (t->let_go && REL_ON(t)) { t->astage = 4; break; }                /* a key let go -> RELEASE; REL=OFF: the decay keeps running */
         int32_t d8 = P8(t, P_DEC);
         if (d8 < 127 * 256) t->aenv = mulu_hi(t->aenv, tq_u32(T_ADEC_COEF, d8), 31);
-        else if (!t->gate) t->astage = 4;
+        else if (!t->gate && REL_ON(t)) t->astage = 4;                       /* DEC=INF: release on note-off; REL=OFF: keep holding -> drone */
         if (t->aenv < (1u << 15)) { t->aenv = 0; t->astage = 0; }
         break;
     }
@@ -1674,6 +1681,7 @@ static void voice_trig(int ti, int note, int vel, int slide, unsigned skip)
     if (slide && t->sounding) {
         t->slide = 1;
         t->gate = 1;
+        t->hush = 0;                   /* (the fork: a new note, a drone again at REL OFF) */
         return;
     }
     t->slide = 0;
@@ -1685,6 +1693,7 @@ static void voice_trig(int ti, int note, int vel, int slide, unsigned skip)
         int legato = t->sounding && (t->aenv >> 15) >= XF_MIN && (t->eff[P_ATK] || t->peak >= XF_HIT);
         t->gate = 1;
         t->let_go = 0;
+        t->hush = 0;
         t->sounding = 1;
         t->astage = 1;
         /* every attack from silence, its whole time heard on every note (the owner's, 2026-11-18: one carried on from
@@ -1716,6 +1725,13 @@ static void voice_off(int ti)
     t->gate_left = -1;
     t->let_go = 1;
     mx_note_off(ti);                   /* its note out ends with it (no gate end comes to send it) */
+}
+
+/* the fork: the sequencer stopped -- every note ends, a REL OFF drone too (voice_off alone would leave it holding) */
+static void voice_hush(int ti)
+{
+    voice_off(ti);
+    trk[ti].hush = 1;
 }
 
 /* the modulation effect over a block: a chorus (7..17 ms, swept), a flanger (0.5..5 ms, fed back) or a phaser (four

@@ -1,3 +1,15 @@
+# NUBO.MOD (a fork of MONO2K)
+
+NUBO.MOD: a performance-first fork of MONO2K for the M-VAVE FM-1. Takes an already great groovebox closer to the
+Elektron flow: simpler, more intuitive controls, Control All, live-recorded trigless p-locks, a two-stage panic and
+more. Built for my own use, shared as is.
+
+**What it changes, and how to use it: [NUBO.md](NUBO.md).** A modified version of MONO2K by Inigo Hernandez
+(GPL-3.0, as the original); based on MONO2K v1.13. Not MONO2K's release: report its issues here, not to MONO2K.
+The rest of this README is MONO2K's own.
+
+---
+
 # MONO2K
 
 **Six mono machines for the M-VAVE FM-1.** A Monomachine-style synthesizer firmware: six tracks, each one machine,

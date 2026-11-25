@@ -1055,10 +1055,12 @@ static inline __attribute__((always_inline)) void rv_run(const int32_t *rsend, i
  * two of them turned into each other by a swaying angle. Every recursive product carries its remainder (a tail
  * decays at its rate to the last step, not faster, and holds no DC); once the input and the lines stay within a step
  * for a whole pass it empties and sleeps. Turned to 0 its tail fades in 6 ms */
+static uint8_t rv_hush;               /* the fork: the panic's second press (SEQ + 10) -- the tail faded as if turned to 0 */
 static void reverb_block(int verb, int damp, const int32_t *rsend, int32_t *L, int32_t *R, int32_t shim)
 {
     int v = verb ? verb : bus.rv_v;
-    if (!v) return;
+    if (!v) { rv_hush = 0; return; }
+    if (rv_hush) verb = 0;             /* (the fork's: faded out below, emptied, then as ever) */
     int in = 0;
     for (int i = 0; i < M2K_SUB; i++) in |= rsend[i];
     if (bus.rsleep && !in && verb == bus.rv_v) return;
@@ -1076,7 +1078,7 @@ static void reverb_block(int verb, int damp, const int32_t *rsend, int32_t *L, i
     int32_t fade = verb ? 32767 : bus.rfade;
     if (!verb) {
         bus.rfade -= 2048;
-        if (bus.rfade <= 0) { rv_clear(); bus.rv_v = 0; return; }   /* the lines start empty next time */
+        if (bus.rfade <= 0) { rv_clear(); bus.rv_v = 0; rv_hush = 0; return; }   /* the lines start empty next time */
     } else bus.rfade = 32767;
     /* the swing: lines 2 and 4 turned into each other by a small angle swaying at 0.7 Hz (energy kept, no line's
      * gain moves: a long tail's modes smeared instead of ringing) */

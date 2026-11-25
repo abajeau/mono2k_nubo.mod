@@ -229,5 +229,6 @@ void m2k_pattern(int n);                            /* select a pattern, as PRES
 void m2k_track(int t);                              /* select a track, as SELECT does (the web's track cells) */
 void m2k_mute(int t);                               /* mute or unmute a track of the pattern */
 void m2k_tempo(int d);                              /* the tempo up or down by d BPM */
+void m2k_battery(int raw);                          /* the FM-1 pushes its battery ADC (ch3, 0..1023, smoothed); GLO's header shows it */
 
 #endif

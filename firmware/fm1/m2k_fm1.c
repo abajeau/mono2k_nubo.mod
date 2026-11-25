@@ -100,6 +100,7 @@ static void midi_drain(void)
 static int button_of(uint32_t id) { return id == BTN_OCT_DOWN ? B_OCTD : id == BTN_OCT_UP ? B_OCTU : (int)id - 2; }
 static const uint8_t ENC_OF[7] = {E_SELECT, E_ALGO, E_K1, E_K2, E_K3, E_K4, E_PRESET};
 static uint32_t notes_prev;
+static int32_t fm1_batt;                            /* the battery ADC (ch3) smoothed, in 1/32 counts (Q5); pushed to the core (GLO's header) */
 
 static void take_panel(void)
 {
@@ -299,7 +300,10 @@ static void lights(void)
 {
     const uint8_t *l = m2k_leds();
     uint32_t i;
-    for (i = 0; i < M2K_KEYS; i++) fm1_led_key(KEY_LED(i), l[i] >= 64u);
+    for (i = 0; i < M2K_KEYS; i++) {               /* (the fork: 48..55 lit a tenth of the scan, 56..63 a fifth, fm1_led_dim) */
+        fm1_led_key(KEY_LED(i), l[i] >= 64u);
+        fm1_led_key_dim(KEY_LED(i), l[i] >= 64u ? 0u : l[i] >= 56u ? 2u : l[i] >= 48u ? 1u : 0u);
+    }
     for (i = 0; i < 14u; i++) fm1_led_key(i, l[M2K_KEYS + button_of(i)] >= 64u);
 }
 
@@ -446,6 +450,12 @@ static void app_loop(void)
     if (!pending && pace_frame_due(since, ring_w - ring_r)) {
         lights();
         screen_frame();
+        if (!fm1_an.con) {                         /* the battery (ch3): only when the scan isn't using the converter (as the master read) */
+            int32_t b = fm1_adc_read(FM1_ADC_BATT);
+            /* the IIR in 1/32 counts: stepped in whole counts, (b - batt) / 32 rounds to zero within 31 counts
+             * of the target -- a dead zone of ~40 % of the 520..595 scale (the compiler's find) */
+            if (b > 0) { fm1_batt = fm1_batt ? fm1_batt + ((b << 5) - fm1_batt) / 32 : b << 5; m2k_battery((int)(fm1_batt >> 5)); }
+        }
     }
     screen_send();
     if (m2k_dirty()) save_due = 1;

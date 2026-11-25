@@ -126,6 +126,12 @@ static volatile struct {
     uint32_t frames;
 } fm1_in;
 static uint8_t fm1_led[FM1_NCOL];
+#define FM1_LED_DIM_N 10u               /* the fork: a dim LED lit one frame in this many (10 %; a frame ~1.1 ms: ~90 Hz) */
+static uint8_t fm1_led_dim[FM1_NCOL];   /* the fork: lit one frame in FM1_LED_DIM_N (fm1_input_tick): a dim LED */
+static uint8_t fm1_led_dim2[FM1_NCOL];  /* the fork: and a second one, half way: twice as bright (20 %) */
+static uint8_t fm1__dim_ph;             /* the fork: the frame count for it, 0 .. FM1_LED_DIM_N - 1 */
+#define FM1__LEDS(c) ((uint8_t)(fm1_led[c] | (fm1__dim_ph == 0u ? fm1_led_dim[c] : \
+                                             fm1__dim_ph == FM1_LED_DIM_N / 2u ? fm1_led_dim2[c] : 0u)))
 static volatile struct {
     uint16_t con;                /* the conversion's clock / start delay (FM1_ADC_CON); 0 = analog off */
     uint8_t pend, col, rowbit;   /* a conversion runs for (col, rowbit); rowbit 0 = the pot */
@@ -404,16 +410,17 @@ static void fm1_input_tick(void)
     if (n == 0u) {
         uint32_t np = (fm1_an.probe & 1u) + ((fm1_an.probe >> 1) & 1u) + ((fm1_an.probe >> 2) & 1u);
         fm1__frame();
+        fm1__dim_ph = (uint8_t)(fm1__dim_ph + 1u >= FM1_LED_DIM_N ? 0u : fm1__dim_ph + 1u);   /* (the fork: dim LEDs) */
         fm1_an.phase = (uint8_t)(fm1_an.phase + 1u >= 2u + np ? 0u : fm1_an.phase + 1u);
     }
     if (fm1_an.con && fm1_an.phase >= 2u) {        /* a probe frame: the row of this phase, through PA10 */
         uint32_t pr = fm1__probe_row(fm1_an.phase);
         if (!pr || (pr == 2u ? n >= FM1_PROBE_COLS : FM1_KEYMAP[pr][n] < 14)) {
-            fm1__led_lines(fm1_led[n]);            /* a button's column, or none: nothing to probe */
+            fm1__led_lines(FM1__LEDS(n));            /* a button's column, or none: nothing to probe */
             fm1__tick_col = (uint8_t)n;
             return;
         }
-        fm1__led_lines(fm1_led[n] & ~(1u << 2));
+        fm1__led_lines(FM1__LEDS(n) & ~(1u << 2));
         fm1__pa10_probe(1);
         fm1__row_drive(pr, 0u);                    /* the weakest, whatever DRIVE is: TOP LOW / HIGH were measured so */
         fm1__tick_col = (uint8_t)n;
@@ -424,7 +431,7 @@ static void fm1_input_tick(void)
         fm1_an.pend = 1;
         return;
     }
-    fm1__led_lines(fm1_led[n]);
+    fm1__led_lines(FM1__LEDS(n));
     fm1__tick_col = (uint8_t)n;
     if (fm1_an.con && fm1_an.phase < 2u) {         /* column n is latched now: sample it until the next tick */
         uint32_t odd = fm1_an.phase, ch, rowbit;
@@ -537,6 +544,24 @@ static void fm1_led_key(uint32_t id, int on)
                     fm1_led[p] |= (uint8_t)(1u << r);
                 else
                     fm1_led[p] &= (uint8_t)~(1u << r);
+            }
+}
+
+/* the fork: a key's dim LED (lit one frame in FM1_LED_DIM_N by fm1_input_tick), as fm1_led_key */
+static void fm1_led_key_dim(uint32_t id, uint32_t lvl)       /* 0 off, 1 a frame in FM1_LED_DIM_N, 2 two */
+{
+    uint32_t p, r;
+    for (p = 0; p < FM1_NCOL; p++)
+        for (r = 1; r < 5u; r++)
+            if (FM1_KEYMAP[r][p] == (int8_t)id) {
+                if (lvl)
+                    fm1_led_dim[p] |= (uint8_t)(1u << r);
+                else
+                    fm1_led_dim[p] &= (uint8_t)~(1u << r);
+                if (lvl > 1u)
+                    fm1_led_dim2[p] |= (uint8_t)(1u << r);
+                else
+                    fm1_led_dim2[p] &= (uint8_t)~(1u << r);
             }
 }
 

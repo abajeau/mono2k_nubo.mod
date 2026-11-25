@@ -196,6 +196,16 @@ static void apply_locks(int t, int s)
         if (p->lock[i].trk == t && p->lock[i].step == s) trk[t].eff[p->lock[i].param] = p->lock[i].val;
 }
 
+/* the fork: a step with locks and no trig (a knob recorded live where no note was, as Elektron's trigless locks): its
+ * locks on the note that goes on, over what it has (the last trig's sound and locks, any lock step since) -- no restart,
+ * no pitch; held until the next trig sets the sound again (apply_locks) or the next such step */
+static void apply_locks_over(int t, int s)
+{
+    const m2k_pattern_t *p = PAT(cur_pat);
+    for (int i = 0; i < M2K_LOCKS; i++)
+        if (p->lock[i].trk == t && p->lock[i].step == s) trk[t].eff[p->lock[i].param] = p->lock[i].val;
+}
+
 static int32_t gate_blocks(int t)
 {
     int32_t gl = trk[t].eff[P_GATE];                /* the step's, a GATE lock with it (apply_locks) */
@@ -334,6 +344,7 @@ static void poly_fire(int t, int s, int32_t len)
     if ((p->mute >> t & 1) || (sq.solo && !(sq.solo >> t & 1))) return;
     const int n = pv.nv[t];
     const m2k_step_t st = p->step[t][s];
+    if (!(st.flags & ST_TRIG) && has_locks(t, s)) apply_locks_over(t, s);   /* (the fork: the voices follow, poly_effs) */
     if (st.flags & ST_TRIG) {
         if (sq.rec_skip[t] == s) { sq.rec_skip[t] = -1; return; }
         if (sq.nheld[t]) return;                    /* the player has the lead and its voices */
@@ -373,7 +384,8 @@ static void fire_track(int t, int s, int32_t len, uint32_t k)
     if (pv.nv[t] > 1) { poly_fire(t, s, len); return; }
     {
         m2k_step_t st = p->step[t][s];
-        if (!(st.flags & ST_TRIG) || (p->mute >> t & 1) || (sq.solo && !(sq.solo >> t & 1))) return;
+        if ((p->mute >> t & 1) || (sq.solo && !(sq.solo >> t & 1))) return;
+        if (!(st.flags & ST_TRIG)) { if (has_locks(t, s)) apply_locks_over(t, s); return; }   /* (the fork: a lock step, on the note going on, played or held) */
         if (sq.rec_skip[t] == s) { sq.rec_skip[t] = -1; return; }
         if (sq.nheld[t]) return;                    /* the player (or its arp) has the track */
         if (!cond_pass(t, st.cond) || !prob_pass(t)) return;
@@ -745,7 +757,7 @@ static void seq_play(int on)
         }
     }
     if (!on) {
-        for (int t = 0; t < M2K_TRACKS; t++) voice_off(t);          /* (their notes out end with them) */
+        for (int t = 0; t < M2K_TRACKS; t++) voice_hush(t);         /* (their notes out end with them; the fork: REL OFF too) */
         m_set(sq.rt_left, 0, sizeof sq.rt_left);                     /* a ratchet's hits too */
         if (sq.playing && !mx.ext && set_on(S_SYNO)) mx_out(1, 0xFC, 0, 0);
         if (mute_pending()) mutes_now();                             /* stopped: what waited, at once */
@@ -1418,7 +1430,9 @@ void m2k_setting(int i, int v)
 int m2k_dirty(void)
 {
     int d = dirty;
-    if (set_wait && mx.now - set_at >= 3u * M2K_SR) { set_wait = 0; d = 1; }
+    /* the fork: a setting is no longer saved on its own 3 s after the change -- it goes into the flash with the next
+     * explicit save (SAVE, hold SAVE, a sound kept), so nothing is written without one (the store is one stream: a
+     * setting's save also wrote every working pattern's edits, and a save deferred past PLAY stalled the stop) */
     dirty = 0;
     return d;
 }

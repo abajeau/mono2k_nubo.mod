@@ -345,8 +345,8 @@ def main():
         CORE.extend(["-DM2K_FM1_DIAG=1", "-DM2K_PROF"])   # (the bench's parts: the core's profile)
         name = "mono2k-test.fwsc"
     if a.release:
-        if not re.fullmatch(r"\d+\.\d+(\.\d+)?", a.release):
-            raise SystemExit(f"--release {a.release}: X.Y or X.Y.Z")
+        if not re.fullmatch(r"\d+\.\d+(\.\d+)?(-\d+[a-z]+)?", a.release):   # the fork's -Nn suffix (e.g. 1.6-1n)
+            raise SystemExit(f"--release {a.release}: X.Y, X.Y.Z or X.Y-Nn")
         VERSION, name = a.release, f"mono2k-{a.release}.fwsc"
     CORE.append(f'-DM2K_VER="{VERSION}"')     # the boot screen's version (0.0 for a build that is no release)
     fm1pkg_make.SDK = a.sdk or os.environ.get("AC79_SDK") or str(Path.home() / "fw-AC79_AIoT_SDK")

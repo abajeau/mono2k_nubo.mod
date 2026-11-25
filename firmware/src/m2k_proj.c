@@ -518,6 +518,27 @@ static const char *pat_name(int i)
 #endif
 }
 
+/* the fork: has pattern i a trig, on any track -- without unpacking it (HOME's keys): the slot's steps when it is held,
+ * else its blob's trig mask (pat_pack_v). Patterns' names are kept in the store, no longer shown */
+static int pat_has_trigs(int i)
+{
+#if PAT_CACHE
+    if (pat_idx[0] != i && pat_idx[1] != i) {
+        int n;
+        const uint8_t *b = img_get(&work_img, i, &n);
+        if (n < 10) return 0;
+        const int ver = b[1], nt = fmt_nt(ver), w = nt * M2K_STEPS / 8;
+        const int at = 2 + 8 + nt + G_COUNT_OF(ver, nt) + (ver >= 26) + 1 + nt * fmt_kit(ver);
+        for (int k = 0; k < w && k < M2K_TRACKS * M2K_STEPS / 8 && at + k < n; k++) if (b[at + k]) return 1;
+        return 0;
+    }
+#endif
+    const m2k_pattern_t *p = PAT(i);
+    for (int t = 0; t < M2K_TRACKS; t++)
+        for (int st = 0; st < M2K_STEPS; st++) if (p->step[t][st].flags & ST_TRIG) return 1;
+    return 0;
+}
+
 /* may add more bytes go into the working image, the playing pattern's room kept (a paste into many) */
 static int pat_room(int add)
 {
@@ -620,12 +641,21 @@ static int sound_guess(int m, const uint8_t *k, int lo, int hi)
     }
 }
 
-static void sound_name(char *o, const m2k_pattern_t *p, int t)   /* "MAMMO3": the pattern's name, the track */
+/* the fork: "B03T2", the pattern's slot and the track (its name, no longer shown, was the author's "MAMMO3") */
+static void sound_name(char *o, const m2k_pattern_t *p, int t)
 {
-    int i = 0;
-    for (; i < 5 && p->name[i] && p->name[i] != ' '; i++) o[i] = p->name[i];
-    o[i++] = (char)('1' + t);
-    o[i] = 0;
+#if PAT_CACHE
+    const int i = p == &store_.p[0] ? pat_idx[0] : p == &store_.p[1] ? pat_idx[1] : cur_pat;
+#else
+    const int i = (int)(p - pat);
+#endif
+    const int n = (i & 15) + 1;
+    o[0] = (char)('A' + (i >> 4));
+    o[1] = (char)('0' + n / 10);
+    o[2] = (char)('0' + n % 10);
+    o[3] = 'T';
+    o[4] = (char)('1' + t);
+    o[5] = 0;
 }
 
 /* a track's sound into a slot, made at note root (-1: its trigs' root, or its machine's home note without trigs) */
