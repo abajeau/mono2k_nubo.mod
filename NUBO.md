@@ -13,8 +13,8 @@ MONO2K as its author made it.
 
 - **RELEASE OFF — a drone.** On AMP 1, turn REL all the way down: it reads `OFF`, and a note no longer fades out
   after its end (the envelope's picture shows no release).
-- **To end a drone:** the panic (SEQ + white 10), or turn REL back up; stopping the sequencer silences it too. The
-  next note drones again.
+- **To end a drone:** the panic (SEQ + white 10), or turn REL back up. The next note drones
+  again.
 - **With HOLD INF:** the note holds while the key is down (or the step's length lasts), then falls by DECAY; only
   DEC INF holds it forever.
 - **With a sustain (SUS above 0):** after the note's end the SUS level holds.

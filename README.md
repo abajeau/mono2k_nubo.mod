@@ -16,7 +16,7 @@ panic and more. Built for my own use, shared as is.
   play them. In GRID these steps are underlined and lit dim; hold one to see its locks, and the page buttons of the
   sections it locks blink.
 - **Drones.** Turn the amp's RELEASE all the way down (`OFF`) and a note never fades out after its end. To end it:
-  the panic, or turn RELEASE back up; stopping the sequencer silences it too.
+  the panic, or turn RELEASE back up.
 - **Two-stage panic.** SEQ + white 10: the first press stops every sound source and lets the reverb's tail ring
   out, the second press silences everything.
 - **Clear a track's locks** in one go: SEQ + white 9.
