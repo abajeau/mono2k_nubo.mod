@@ -2938,7 +2938,7 @@ static void button_event(int b, int down)
         if (stop_to_save()) return;
         char a[24], *e = s_pat(a, cur_pat);
         if (pattern_save()) { *e = 0; toast("SAVED", a); dirty = 1; ui.save_t = ui.now | 1u; }
-        else toast(M2K_PROJECTS > 1 ? "PROJECT FULL" : "PATTERNS FULL", "PATTERN NOT SAVED");   /* (the fork: no project on the FM-1) */
+        else toast("PROJECT FULL", "PATTERN NOT SAVED");
         return;
     }
     if (b == B_REC) {                  /* a tap arms recording; held, it is FILL */
@@ -4737,11 +4737,6 @@ static void play_picture(int busy)
  * square lit while it brings something; PLAY the mutes */
 /* GLO > HELP: the manual on the device, a page a topic, KNOB 1 turns them. Every line what a hand does, by the panel's
  * names (about 25 characters a line: the audit holds them to the screen) */
-#if M2K_PROJECTS > 1
-#define HELP_SAVE_HELD "SAVE HELD: THE PROJECT"
-#else
-#define HELP_SAVE_HELD "SAVE HELD: ALL DATA"   /* (the fork: no project on the FM-1) */
-#endif
 static const char *const HELP[HELP_N][7] = {
     {"START", "SELECT: THE TRACK", "PRESETS: ITS SOUND, HEARD", "OCT+ KEEPS IT, OCT- BACK", "ALGO: ITS MACHINE",
      "SEQ: KEYS BECOME STEPS", "PLAY: GO"},
@@ -4759,7 +4754,7 @@ static const char *const HELP[HELP_N][7] = {
      "KNOBS WHILE REC: LOCKS", 0},
     {"PERFORM", "FX HELD: BLACK KEYS, FX", "OCT- OCT+: BANKS A B C", "FX TWICE: STAYS, ANY PAGE",
      "HOLD FX: ITS KNOBS AGAIN", "BLACK KEY TWICE: STAYS ON", "TAP IT AGAIN: LET GO"},
-    {"SAVE", "SAVE: KEEP THE PATTERN", "GLO + SAVE: BACK TO IT", HELP_SAVE_HELD, "GLO + OCT- UNDO",
+    {"SAVE", "SAVE: KEEP THE PATTERN", "GLO + SAVE: BACK TO IT", "SAVE HELD: THE PROJECT", "GLO + OCT- UNDO",
      "GLO + OCT+ REDO", 0},
     {"CHORDS", "ARP, KNOB 1: MODE POLY", "KNOB 2: HOW MANY VOICES", "THE NEXT TRACKS PLAY IT", "GLO + POLY KEY: ON",
      "GLO + MONO KEY: OFF", "ARP TWICE: CHORD HOLD"},
@@ -5608,8 +5603,8 @@ const uint8_t *m2k_frame(uint32_t ms)
         char o[16] = {'P', (char)('1' + slot), ' ', 0};
         s_cpy(o + 3, "SAVED");
         if (!stop_to_save()) {
-            if (project_save(slot)) { toast(M2K_PROJECTS > 1 ? "PROJECT" : "ALL DATA SAVED", M2K_PROJECTS > 1 ? o : 0); dirty = 1; ui.save_t = ms | 1u; }   /* (the fork: one project on the FM-1, no P1) */
-            else toast(M2K_PROJECTS > 1 ? "PROJECT FULL" : "PATTERNS FULL", "NOT SAVED");
+            if (project_save(slot)) { toast("PROJECT", o); dirty = 1; ui.save_t = ms | 1u; }
+            else toast("PROJECT FULL", "NOT SAVED");
         }
     }
 

@@ -31,11 +31,11 @@ panic and more. Built for my own use, shared as is.
   open one fully.
 - **Dimmed key lights.** The FM-1's key LEDs could only be on or off; the LED driver now dims them too (10 % and
   20 %), so the keys can show more than one state: a step with locks only, the page keys, filled patterns.
-- **Smaller fixes.** A held SAVE reads `ALL DATA SAVED` (it said "project 1", but the FM-1 keeps banks and patterns,
-  no projects); a new splash, readable at once and dark in both themes.
+- **A new splash:** readable at once, dark in both themes.
 
-**Install:** build the package ([NUBO.md](NUBO.md), "Build and flash") and flash it with
-[M-Flasher](https://github.com/jvitkauskas/m-flasher): NUBO.MOD is flashed and backed up with it. Back up first.
+**Install:** flash [`releases/nubo.mod-1.13-5n.fwsc`](releases/) with
+[M-Flasher](https://github.com/jvitkauskas/m-flasher), which also backs up the whole flash first; or build it yourself
+([NUBO.md](NUBO.md), "Build and flash").
 
 A modified version of MONO2K by Inigo Hernandez (GPL-3.0, as the original); based on MONO2K v1.13. Not MONO2K's release: report its issues here, not to MONO2K.
 The rest of this README is MONO2K's own.

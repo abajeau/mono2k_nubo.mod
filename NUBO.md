@@ -26,8 +26,6 @@ MONO2K as its author made it.
   stays as it was: GLO + SAVE brings it back.
 - **SAVE:** a tap keeps the open pattern, a hold keeps everything (patterns, sounds, GLO settings). It works while
   stopped (`STOP TO SAVE` while playing), so writing the flash never interrupts the sound.
-- **The messages:** a held SAVE reads `ALL DATA SAVED`, out of room `PATTERNS FULL`. MONO2K said "project 1", but
-  the FM-1 keeps banks and patterns, no projects.
 
 ## Patterns
 
@@ -97,10 +95,10 @@ MONO2K as its author made it.
 ## Build and flash
 
 ```sh
-python tools/fm1/build.py --release 1.13-6n
+python tools/fm1/build.py --release 1.13-5n
 ```
 
-The package is `build/fm1/mono2k-1.13-6n.fwsc` (MONO2K's build, its toolchain as the main README says). The
+The package is `build/fm1/mono2k-1.13-5n.fwsc` (MONO2K's build, its toolchain as the main README says). The
 `--release X.Y-Nn` suffix shows on the splash and the update screen. Flash it with [M-Flasher](https://github.com/jvitkauskas/m-flasher), which also backs up the whole flash first.
 `web/firmware/mono2k.fwsc` in this repository
 is MONO2K's own package, not NUBO.MOD.
