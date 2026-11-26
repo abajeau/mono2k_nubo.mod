@@ -1292,6 +1292,52 @@ static __attribute__((noinline)) void bus_colour(int16_t *out)
     bus.c_run = (uint8_t)run;
 }
 
+/* the fork: GLUE (GLO > GLUE), a compressor on the bus (the owner's, after mono8t's master: the mix pumping into one
+ * dense texture). Its controls are three of the pattern's bytes MONO2K left unheard in 1.5: GLUE G_GSIZ (0 off: none
+ * of it runs), MIX G_GLCH (its share, wet), POS G_TAPE (below 64 after the reverb, the tail pumping too; from 64
+ * before it, the dry mix alone). Feed-forward on the block's stereo peak, followed in log2 (DYNMX's way): an attack
+ * of ~1 ms, a release of ~120 ms; GLUE sets the threshold (down 24 dB from GL_REF) and the ratio (2:1 .. 8:1)
+ * together, made up by its own reduction followed over ~1.5 s, and a quarter more (the loudness kept, the dynamics squeezed). The gain
+ * moves down at once and ramps up over the block. One log2 and one 2^x a block, a multiply a sample: on the second
+ * core with the bus */
+#ifndef GL_REF
+#define GL_REF (14 * 256)              /* log2 Q8 of the bus's level GLUE counts down from (tuned on bank A) */
+#endif
+#define GL_ATK 9830                    /* Q15 a block (0.36 ms): ~1 ms */
+#define GL_REL 99                      /* ~120 ms */
+#define GL_MK 8                        /* the make-up's follower, Q15 a block: ~1.5 s */
+static struct { int32_t env, g, gr, mk; } glue;   /* the follower (log2 Q8), the gain (Q16), its reduction (log2 Q8, the
+                                                    * screen's), the make-up (log2 Q16) */
+static void glue_block(int32_t *L, int32_t *R, int amt, int mix)
+{
+    uint32_t pk = 1;
+    for (int i = 0; i < M2K_SUB; i++) {
+        uint32_t a = (uint32_t)(L[i] < 0 ? -L[i] : L[i]), c = (uint32_t)(R[i] < 0 ? -R[i] : R[i]);
+        if (a > pk) pk = a;
+        if (c > pk) pk = c;
+    }
+    const int32_t lv = ilog2_q8(pk);
+    if (!glue.env) glue.env = lv;
+    glue.env += ((lv - glue.env) * (lv > glue.env ? GL_ATK : GL_REL)) >> 15;
+    const int32_t thr = GL_REF - (amt * 1020) / 127;       /* 24 dB: 4 octaves of log2 */
+    const int32_t s = 128 + (amt * 96) / 127;             /* 1 - 1 / ratio, Q8: 2:1 .. 8:1 */
+    const int32_t over = glue.env - thr, red = over > 0 ? (over * s) >> 8 : 0;
+    glue.gr = red;
+    glue.mk += (((red << 8) - glue.mk) * GL_MK) >> 15;
+    const int32_t gl = -red + ((glue.mk * 5) >> 10);       /* made up by the reduction on average, and a quarter: the
+                                                             * loud parts, squeezed most, are what is heard */
+    uint32_t g1 = iexp2_q16(gl), g0 = glue.g ? (uint32_t)glue.g : g1;
+    if (g1 < g0) g0 = g1;
+    const int32_t w = (mix * 32767) / 127;
+    for (int i = 0; i < M2K_SUB; i++) {
+        int32_t g = (int32_t)(g0 + (uint32_t)mul_sh((int32_t)(g1 - g0), i, 4));
+        int32_t yl = (int32_t)mul_sh(L[i], g, 16), yr = (int32_t)mul_sh(R[i], g, 16);
+        L[i] += (int32_t)mul_sh(yl - L[i], w, 15);
+        R[i] += (int32_t)mul_sh(yr - R[i], w, 15);
+    }
+    glue.g = (int32_t)g1;
+}
+
 static void bus_block(brec_t *b, int16_t *out)
 {
     int32_t *L = b->L, *R = b->R;
@@ -1339,7 +1385,11 @@ static void bus_block(brec_t *b, int16_t *out)
         else for (int i = 0; i < M2K_SUB; i++) rs2[i] -= rsend[i];
     }
 #endif
+    const int gamt = g[G_GSIZ] & 127, gpre = g[G_TAPE] >= 64;   /* (the fork: GLUE, before or after the reverb) */
+    if (!gamt) glue.env = glue.g = glue.gr = glue.mk = 0;
+    if (gamt && gpre) glue_block(L, R, gamt, g[G_GLCH] & 127);
     reverb_block(verb, damp, rs, L, R, shim);
+    if (gamt && !gpre) glue_block(L, R, gamt, g[G_GLCH] & 127);
     if (bus.sh_on && perf.on[PF_SHIM]) bus.sh_q = 0;
     else if (bus.sh_on && !bus.sh_snd && ++bus.sh_q > 4u * M2K_SR / M2K_SUB) bus.sh_on = 0, bus.sh_q = 0;   /* (4 s on) */
     /* the controls on their laws (tools/gen_tables.py, the bus's controls). The tape runs only for WOW: its depth glides

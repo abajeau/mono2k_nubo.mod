@@ -2,7 +2,7 @@
 
 NUBO.MOD: a performance-first fork of MONO2K for the M-VAVE FM-1. Takes an already great groovebox closer to the
 Elektron flow: simpler, more intuitive controls, Control All, live-recorded trigless p-locks, a battery indicator, a two-stage
-panic and more. Built for my own use, shared as is.
+panic, a lofi bus compressor and more. Built for my own use, shared as is.
 
 **What it changes** (each in full, with how to use it: [NUBO.md](NUBO.md)):
 
@@ -17,6 +17,10 @@ panic and more. Built for my own use, shared as is.
   sections it locks blink.
 - **Drones.** Turn the amp's RELEASE all the way down (`OFF`) and a note never fades out after its end. To end it:
   the panic, or turn RELEASE back up.
+- **A lofi, gritty bus compressor.** GLO > GLUE squashes the whole mix: one knob from off to slammed, a dry/wet
+  knob, and a switch to crush the reverb's tail with the beat or leave it ringing over the squash. Fast and
+  unpolished on purpose: the tracks pump and grind together into one dense texture, the level stays about where
+  it was, and the screen shows how hard it is squashing. Saved with the pattern; off until you turn it.
 - **Two-stage panic.** SEQ + white 10: the first press stops every sound source and lets the reverb's tail ring
   out, the second press silences everything.
 - **Clear a track's locks** in one go: SEQ + white 9.
@@ -31,9 +35,11 @@ panic and more. Built for my own use, shared as is.
   open one fully.
 - **Dimmed key lights.** The FM-1's key LEDs could only be on or off; the LED driver now dims them too (10 % and
   20 %), so the keys can show more than one state: a step with locks only, the page keys, filled patterns.
-- **A new splash:** readable at once, dark in both themes.
+- **Smaller fixes.** A held SAVE reads `ALL DATA SAVED` (it said "project 1", but the FM-1 keeps banks and
+  patterns, no projects) and `PATTERNS FULL` when out of room; a new splash, readable at once and dark in both
+  themes.
 
-**Install:** flash [`releases/nubo.mod-1.13-5n.fwsc`](releases/) with
+**Install:** flash [`releases/nubo.mod-1.13-6n.fwsc`](releases/) with
 [M-Flasher](https://github.com/jvitkauskas/m-flasher), which also backs up the whole flash first; or build it yourself
 ([NUBO.md](NUBO.md), "Build and flash").
 

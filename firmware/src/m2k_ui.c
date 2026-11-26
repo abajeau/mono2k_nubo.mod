@@ -24,6 +24,7 @@ enum {
     K_TLEN,                                                                /* a track's own length (SEQ held) */
     K_PROB,                                                                /* its chance (HOME 2: 16 steps, 100 % first) */
     K_SUS, K_FSUS, K_FREL,                                                 /* the ADSR's: the levels, the filter's release */
+    K_GPOS,                                                                /* the fork: GLUE before or after the reverb */
     K_PVOI,                                                                /* POLY's voices (ARP's KNOB 2 on POLY) */
 #ifdef M2K_SPU
     K_RVTY,                                                                /* the Move's reverb type (G_RVTY) */
@@ -65,7 +66,8 @@ static const pi_t PI_MOD[4] = {
 static const pi_t PI_GLOB[G_COUNT] = {
     {"BPM", "TEMPO", K_BPM}, {"SWNG", "SWING", K_SWNG}, {"LEN", "PATTERN LENGTH", K_LEN}, {"ACNT", "ACCENT", K_NUM},
     /* (TAPE, GLCH, SIZE and HISS: kept in the pattern, on no knob and unheard since 1.5) */
-    {"TAPE", "TAPE WOW", K_NUM}, {"ADPC", "ADPCM CRUNCH", K_NUM}, {"GLCH", "GLITCH AMOUNT", K_NUM}, {"SIZE", "REPEAT SIZE", K_NUM},
+    /* (the fork: GLUE's three on TAPE, GLCH and SIZE -- GLO > GLUE) */
+    {"POS", "GLUE POSITION", K_GPOS}, {"ADPC", "ADPCM CRUNCH", K_NUM}, {"MIX", "GLUE MIX", K_PCT}, {"GLUE", "BUS GLUE", K_NUM},
     {"DCAY", "REVERB DECAY", K_DCAY}, {"DAMP", "REVERB DAMPING", K_DAMP}, {"HISS", "HISS AND DUST", K_NUM}, {"DRIV", "BUS DRIVE", K_NUM},
     PI_TRK("SPD", "SPEED", K_SPD),
     {"X", "MAP X", K_PCT}, {"Y", "MAP Y", K_PCT}, {"CHAOS", "CHAOS", K_PCT}, {"RES", "CYCLE", K_GRES},
@@ -246,7 +248,7 @@ static int kind_choices(int k)
     case K_RATIO: case K_WAVE: return 32;
     case K_FR24: return 24;
     case K_SIDW: return 5;
-    case K_ONOFF: case K_MSRC: case K_THRU: case K_GRES: case K_MUTQ: case K_MOTN: return 2;
+    case K_ONOFF: case K_MSRC: case K_THRU: case K_GRES: case K_MUTQ: case K_MOTN: case K_GPOS: return 2;
     case K_REST: return M2K_TRACKS6 + 2;   /* AUTO, T1..T6, NONE */
     case K_SIDM: case K_ALGO: case K_ASPD: case K_ARNG: case K_SYIN: case K_NTIN: case K_LANE: return 4;
     case K_SCRN: return 2;
@@ -550,6 +552,7 @@ static void fmt(const pi_t *pi, int t, int v, char *out, const char **unit)
     case K_LANE: { static const char *const N[4] = {"OFF", "BD", "SD", "HH"}, *const U[4] = {"", "KICK", "SNARE", "HATS"};
                    s_cpy(out, N[c]); *unit = U[c]; break; }
     case K_MUTQ: s_cpy(out, c ? "NOW" : "BAR"); *unit = c ? "AT ONCE" : "NEXT BAR"; break;
+    case K_GPOS: s_cpy(out, c ? "PRE" : "POST"); *unit = c ? "THE DRY MIX" : "THE REVERB TOO"; break;   /* (the fork) */
 #ifdef M2K_SPU
     case K_RVTY: {                     /* the reverb: MONO2K's FDN, or one of the chip's nine (its name in full under) */
         static const char *const N[SRV_N + 1] = {"FDN", "ROOM", "STD S", "STD M", "STD L", "HALL", "HALF", "SPACE",
@@ -583,7 +586,7 @@ static void fmt(const pi_t *pi, int t, int v, char *out, const char **unit)
 /* -------------------------------------------------------------------------------------------- the pages */
 
 enum { PG_HOME, PG_SYN, PG_AMP, PG_FILT, PG_FX, PG_LFO, PG_ARP, PG_GLO, PG_COUNT };
-enum { GS_TIME, GS_BUS, GS_SET, GS_MIDI, GS_IN, GS_PLAY, GS_HELP, GS_COUNT };   /* GLO's (1.5: GLITCH and VERB one page, BUS) */
+enum { GS_TIME, GS_BUS, GS_GLUE, GS_SET, GS_MIDI, GS_IN, GS_PLAY, GS_HELP, GS_COUNT };   /* (the fork: GLUE after BUS) */   /* GLO's (1.5: GLITCH and VERB one page, BUS) */
 static const uint8_t NSUB[PG_COUNT] = {2, 3, 3, 3, 4, 6, 3, GS_COUNT};   /* HOME: the pattern's, the track's sequencing; SYN:
                                                                              * its two, then SND (BANK before it); AMP and
                                                                              * FILT three (AMP_K, FILT_K); ARP, GRIDS */
@@ -595,6 +598,7 @@ static int nsub(int page);                     /* SYN has a third page, the bank
 static int view_trk(void);                     /* the track in view (LANE is its own) */
 /* the bus's four, GLO > BUS's and PERFORM's knobs: the reverb, the crunch, the drive (the owner's "the important") */
 static const uint8_t BUS_K[4] = {GL(G_VERB), GL(G_DAMP), GL(G_ADPC), GL(G_DRIV)};
+static const uint8_t GLUE_K[4] = {GL(G_GSIZ), GL(G_GLCH), GL(G_TAPE), NONE};   /* the fork: GLUE MIX POS */
 
 /* AMP's and FILT's pages (the owner's, format 22: regular ADSRs): AMP 1 the envelope, AMP 2 the chain, AMP 3 HOLD and
  * three free; FILT 1 the band, FILT 2 its envelope, FILT 3 how far it takes the band, two free */
@@ -619,7 +623,7 @@ static int knob_param(int page, int sub, int k)
         return sub == 0 ? P_AMOD + k : sub == 1 ? GL(G_GRX + k) : k < 3 ? GL(G_GRBD + k) : GL(G_LANE1 + view_trk());
     case PG_GLO: return sub == GS_HELP ? (k == 0 ? SETTING(24) : NONE) : sub == GS_PLAY ? (k == 0 ? SETTING(S_MUTQ) : k == 1 ? SETTING(S_REST) : k == 2 && M2K_PROJECTS > 1 ? SETTING(S_MOTN) : NONE)
                         : sub == GS_IN ? (k == 0 ? SETTING(S_NTIN) : k == 1 ? SETTING(S_THRU) : NONE)
-                        : sub == GS_TIME ? GL(G_TMPO + k) : sub == GS_BUS ? BUS_K[k] : sub == GS_MIDI ? SETTING(S_MCH + k)
+                        : sub == GS_TIME ? GL(G_TMPO + k) : sub == GS_BUS ? BUS_K[k] : sub == GS_GLUE ? GLUE_K[k] : sub == GS_MIDI ? SETTING(S_MCH + k)
                         : k == 0 ? SETTING(S_SCREEN) : M2K_PROJECTS < 2 ? (k == 1 ? SETTING(22) : k == 2 ? SETTING(23) : SETTING(S_MOTN))
                         : k == 1 ? SETTING(16) : k == 2 ? SETTING(17) : k == 3 ? SETTING(22) : NONE;   /* SET: PROJ, LOAD with projects */
     default: return NONE;
@@ -632,7 +636,7 @@ static void page_label(int page, int sub, char *o)
     switch (page) {
     case PG_FX: s_cpy(o, sub == 0 ? "FX" : sub == 1 ? "DELAY" : sub == 2 ? "DSTR" : "MOD"); break;
     case PG_LFO: { char *e = s_cpy(o, "LFO"); e = s_int(e, sub % 3 + 1); if (sub >= 3) s_cpy(e, "+"); break; }
-    case PG_GLO: { static const char *const GN[GS_COUNT] = {"TIME", "BUS", "SET", "MIDI", "IN", "PLAY", "HELP"};
+    case PG_GLO: { static const char *const GN[GS_COUNT] = {"TIME", "BUS", "GLUE", "SET", "MIDI", "IN", "PLAY", "HELP"};
                    s_cpy(o, GN[sub < GS_COUNT ? sub : 0]); break; }
     case PG_ARP: s_cpy(o, sub == 0 ? "ARP" : sub == 1 ? "GRIDS" : "LANES"); break;
     case PG_SYN: s_cpy(o, sub >= 2 && sub == nsub(PG_SYN) - 1 ? "SND" : sub == 2 ? "BANK" : "SYN"); break;
@@ -1599,6 +1603,7 @@ static void edit(int k, int d)
     } else if (code >= 0xC0) {
         m2k_setting(code & 0x3F, nv);             /* (kept with the store: saved once it stands) */
     } else if (code >= 0x80) {
+        if (code == GL(G_GSIZ) && !v && nv && !p->glob[G_GLCH]) p->glob[G_GLCH] = 127;   /* (the fork: GLUE on, MIX all) */
         p->glob[code & 0x7F] = (uint8_t)nv;
     } else if (ui.grid && ui.nheld) {
         for (int i = 0; i < ui.nheld; i++) lock_set(ui.trk, ui.held[i], code, nv);
@@ -2938,7 +2943,7 @@ static void button_event(int b, int down)
         if (stop_to_save()) return;
         char a[24], *e = s_pat(a, cur_pat);
         if (pattern_save()) { *e = 0; toast("SAVED", a); dirty = 1; ui.save_t = ui.now | 1u; }
-        else toast("PROJECT FULL", "PATTERN NOT SAVED");
+        else toast(M2K_PROJECTS > 1 ? "PROJECT FULL" : "PATTERNS FULL", "PATTERN NOT SAVED");   /* (the fork: no project on the FM-1) */
         return;
     }
     if (b == B_REC) {                  /* a tap arms recording; held, it is FILL */
@@ -3452,7 +3457,7 @@ static int icon_of(const pi_t *pi)
     case K_FOCT: case K_FWID: return IC_FILT;
     case K_LWAV: case K_DWV4: case K_DWV5: case K_SIDW: return IC_WAVE;
     case K_ALGO: case K_VOIC: case K_VOF1: case K_VOF2: case K_CONS: case K_TRK: case K_DEST: case K_LTRG: case K_AMOD:
-    case K_SCRN: case K_ONOFF: case K_SYIN: case K_NTIN: case K_THRU: case K_MUTQ: case K_MOTN: case K_REST: case K_SCAT: case K_MODT:
+    case K_SCRN: case K_ONOFF: case K_SYIN: case K_NTIN: case K_THRU: case K_MUTQ: case K_MOTN: case K_REST: case K_SCAT: case K_MODT: case K_GPOS:
     case K_WBNK: case K_SIDM: case K_MSRC: case K_GRES: case K_LANE: case K_PROJ: case K_SSEL: case K_LOAD: case K_SLOAD:
     case K_SSAVE: case K_WIPE: case K_DEMO:
 #ifdef M2K_SPU
@@ -4737,6 +4742,11 @@ static void play_picture(int busy)
  * square lit while it brings something; PLAY the mutes */
 /* GLO > HELP: the manual on the device, a page a topic, KNOB 1 turns them. Every line what a hand does, by the panel's
  * names (about 25 characters a line: the audit holds them to the screen) */
+#if M2K_PROJECTS > 1
+#define HELP_SAVE_HELD "SAVE HELD: THE PROJECT"
+#else
+#define HELP_SAVE_HELD "SAVE HELD: ALL DATA"   /* (the fork: no project on the FM-1) */
+#endif
 static const char *const HELP[HELP_N][7] = {
     {"START", "SELECT: THE TRACK", "PRESETS: ITS SOUND, HEARD", "OCT+ KEEPS IT, OCT- BACK", "ALGO: ITS MACHINE",
      "SEQ: KEYS BECOME STEPS", "PLAY: GO"},
@@ -4754,7 +4764,7 @@ static const char *const HELP[HELP_N][7] = {
      "KNOBS WHILE REC: LOCKS", 0},
     {"PERFORM", "FX HELD: BLACK KEYS, FX", "OCT- OCT+: BANKS A B C", "FX TWICE: STAYS, ANY PAGE",
      "HOLD FX: ITS KNOBS AGAIN", "BLACK KEY TWICE: STAYS ON", "TAP IT AGAIN: LET GO"},
-    {"SAVE", "SAVE: KEEP THE PATTERN", "GLO + SAVE: BACK TO IT", "SAVE HELD: THE PROJECT", "GLO + OCT- UNDO",
+    {"SAVE", "SAVE: KEEP THE PATTERN", "GLO + SAVE: BACK TO IT", HELP_SAVE_HELD, "GLO + OCT- UNDO",
      "GLO + OCT+ REDO", 0},
     {"CHORDS", "ARP, KNOB 1: MODE POLY", "KNOB 2: HOW MANY VOICES", "THE NEXT TRACKS PLAY IT", "GLO + POLY KEY: ON",
      "GLO + MONO KEY: OFF", "ARP TWICE: CHORD HOLD"},
@@ -4786,6 +4796,19 @@ static void glo_picture(int busy)
                 if (d > (r - 2) * (r - 2) || i >= 0) px(cx + i, cy + j, 1);
                 else if (T_BAYER[(cy + j) & 7][(cx + i) & 7] < 8) px(cx + i, cy + j, 1);
             }
+    } else if (ui.sub == GS_GLUE) {         /* the fork: GLUE's reduction now, in dB, a bar under it */
+        const int amt = p->glob[G_GSIZ] & 127;
+        if (!amt) tx_bc(&F_S, 120, 124, "OFF", 1);
+        else {
+            const int db = (glue.gr * 602 + 12800) / 25600;     /* log2 Q8 -> dB */
+            char o[12] = {'-', 0};
+            s_int(o + 1, db);
+            tx_bc(&F_L, 120, 116, o, 1);
+            tx_bc(&F_S, 120, 136, "DB NOW", 1);
+            frame(SX0 + 8, 150, STW - 16, 10, 1);
+            int w = (STW - 20) * (db > 24 ? 24 : db) / 24;
+            if (w > 0) rect(SX0 + 10, 152, w, 6, 1);
+        }
     } else if (ui.sub == GS_BUS) {
         int v = p->glob[G_VERB], ad = p->glob[G_ADPC];
         const int top = 72, ty = 176, dh = ty - top;
@@ -5603,8 +5626,8 @@ const uint8_t *m2k_frame(uint32_t ms)
         char o[16] = {'P', (char)('1' + slot), ' ', 0};
         s_cpy(o + 3, "SAVED");
         if (!stop_to_save()) {
-            if (project_save(slot)) { toast("PROJECT", o); dirty = 1; ui.save_t = ms | 1u; }
-            else toast("PROJECT FULL", "NOT SAVED");
+            if (project_save(slot)) { toast(M2K_PROJECTS > 1 ? "PROJECT" : "ALL DATA SAVED", M2K_PROJECTS > 1 ? o : 0); dirty = 1; ui.save_t = ms | 1u; }   /* (the fork: one project on the FM-1, no P1) */
+            else toast(M2K_PROJECTS > 1 ? "PROJECT FULL" : "PATTERNS FULL", "NOT SAVED");
         }
     }
 

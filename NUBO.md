@@ -19,6 +19,21 @@ MONO2K as its author made it.
   DEC INF holds it forever.
 - **With a sustain (SUS above 0):** after the note's end the SUS level holds.
 
+## Lofi bus compressor (GLUE)
+
+- **A gritty compressor on the whole mix: GLO > GLUE.** Built to pump and grind, not to polish: it grabs the peaks
+  in about a millisecond and lets go over a tenth of a second, so the mix breathes with the beat. It is the page
+  after BUS; GLO has 8 pages now, so PLAY is one tap further.
+  - **KNOB 1 GLUE:** how hard it squashes. 0 is off; turned up, it digs into more of the mix and harder (down to
+    −24 dB, 2:1 up to 8:1) and makes the level up on its own, so the mix stays about as loud as before.
+  - **KNOB 2 MIX:** the squashed sound against the dry, for parallel compression. The first time GLUE is turned up
+    from 0, MIX jumps to 100 % so you hear it at once.
+  - **KNOB 3 POS:** `POST` squashes after the reverb, so the tail pumps and smears with the beat; `PRE` squashes the
+    dry mix alone and the reverb rings over it clean.
+- **The screen** shows how many dB it is squashing right now, with a bar; `OFF` when GLUE is at 0.
+- **Saved with the pattern**, off by default. Older saves load unchanged: GLUE uses three of the pattern's bytes
+  MONO2K no longer used.
+
 ## Saving
 
 - **Save only when you mean it.** MONO2K wrote the flash on its own; NUBO.MOD writes nothing until you press SAVE.
@@ -26,6 +41,8 @@ MONO2K as its author made it.
   stays as it was: GLO + SAVE brings it back.
 - **SAVE:** a tap keeps the open pattern, a hold keeps everything (patterns, sounds, GLO settings). It works while
   stopped (`STOP TO SAVE` while playing), so writing the flash never interrupts the sound.
+- **The messages:** a held SAVE reads `ALL DATA SAVED`, out of room `PATTERNS FULL`; GLO > HELP says
+  `SAVE HELD: ALL DATA`. MONO2K said "project 1", but the FM-1 keeps banks and patterns, no projects.
 
 ## Patterns
 
@@ -95,10 +112,10 @@ MONO2K as its author made it.
 ## Build and flash
 
 ```sh
-python tools/fm1/build.py --release 1.13-5n
+python tools/fm1/build.py --release 1.13-6n
 ```
 
-The package is `build/fm1/mono2k-1.13-5n.fwsc` (MONO2K's build, its toolchain as the main README says). The
+The package is `build/fm1/mono2k-1.13-6n.fwsc` (MONO2K's build, its toolchain as the main README says). The
 `--release X.Y-Nn` suffix shows on the splash and the update screen. Flash it with [M-Flasher](https://github.com/jvitkauskas/m-flasher), which also backs up the whole flash first.
 `web/firmware/mono2k.fwsc` in this repository
 is MONO2K's own package, not NUBO.MOD.
