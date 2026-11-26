@@ -11,25 +11,31 @@ MONO2K as its author made it.
 
 ## Amp envelope
 
-- **RELEASE OFF — a drone.** AMP 1, REL turned to zero reads `OFF`: the note does not let go after its end; the
-  envelope's picture has no release segment.
-- **STOP silences drones too.** A new note drones again.
-- **HOLD INF with RELEASE OFF:** the note's end goes on to DECAY; only DEC INF holds it forever.
-- **ADSR (SUS above 0) with RELEASE OFF:** after the note's end the SUS level holds; STOP silences it.
+- **RELEASE OFF — a drone.** On AMP 1, turn REL all the way down: it reads `OFF`, and a note no longer fades out
+  after its end (the envelope's picture shows no release).
+- **To end a drone:** the panic (SEQ + white 10), or turn REL back up; stopping the sequencer silences it too. The
+  next note drones again.
+- **With HOLD INF:** the note holds while the key is down (or the step's length lasts), then falls by DECAY; only
+  DEC INF holds it forever.
+- **With a sustain (SUS above 0):** after the note's end the SUS level holds.
 
 ## Saving
 
-- **No autosave.** Nothing goes into the flash but an explicit SAVE while stopped: a tap saves the pattern, a hold
-  saves everything.
-- **While playing,** SAVE and saving a sound are refused: `STOP TO SAVE`.
-- **GLO settings** are saved with SAVE only.
-- **No "project" on the FM-1** (it keeps one): a held SAVE reads `ALL DATA SAVED`; out of room, `PATTERNS FULL`.
+- **Save only when you mean it.** MONO2K wrote the flash on its own; NUBO.MOD writes nothing until you press SAVE.
+  So you can take a pattern apart live, copy it to a new slot or rework its steps mid-set, and the saved version
+  stays as it was: GLO + SAVE brings it back.
+- **SAVE:** a tap keeps the open pattern, a hold keeps everything (patterns, sounds, GLO settings). It works while
+  stopped (`STOP TO SAVE` while playing), so writing the flash never interrupts the sound.
+- **The messages:** a held SAVE reads `ALL DATA SAVED`, out of room `PATTERNS FULL`. MONO2K said "project 1", but
+  the FM-1 keeps banks and patterns, no projects.
 
 ## Patterns
 
-- **No pattern names** in the header, on HOME or in messages (the field stays in the save file: older saves load).
-- **HOME held:** the patterns with a trig in them are lit dim, in every bank.
-- **A saved sound** is named after its slot and track: `B03T2`.
+- **Patterns at a glance.** In MONO2K a pattern's key lit on HOME only if it had a name, and there is no way to name
+  one on the device or in the web editor, so your own patterns never lit. NUBO.MOD drops the names: hold HOME and
+  the patterns with steps in them are lit dim (in every bank), the open one fully.
+- **A sound saved to the library** is named after its pattern slot and track, e.g. `B03T2`. (The names stay in the
+  save file, so older saves load.)
 
 ## Parameter locks
 
@@ -61,13 +67,15 @@ MONO2K as its author made it.
 - **Undo:** one GLO + OCT− undoes one hold.
 - **OCT+ in GRID** turns the page on its release, when no knob was turned.
 
-## SEQ mode (GRID)
+## GRID reworked
 
-- **The hint on entering:** `GRID: OCT-/+ PAGES` / `HOLD DIM LIT P.LEN`.
-- **Pattern length:** black keys 7–10 (the pages) are lit dim; held 0.6 s, the length is 16 / 32 / 48 / 64 steps,
-  `PATTERN <n> STEPS`. A longer length copies the pattern's start over the steps past the old length.
-- **F#5 (the rightmost black key) mutes nothing in GRID.** Mutes: GLO + white 1–6; in PADS F#5 mutes as before.
-- **GLO > HELP, STEPS:** `HOLD 7-10: PAT LENGTH`.
+- **Page keys, lit dim.** Black 7–10 are the pattern's four pages of 16 steps: tap one to see it, hold it 0.6 s to make
+  the pattern that long (16 / 32 / 48 / 64 steps, `PATTERN <n> STEPS`). A longer length copies the pattern's start
+  into the new steps.
+- **Leftover shortcuts removed.** F#5 (the rightmost black key) no longer mutes the track in GRID; mute with GLO +
+  white 1–6 (in PADS, F#5 still mutes).
+- **Hints that match.** Entering GRID: `GRID: OCT-/+ PAGES` / `HOLD DIM LIT P.LEN`; GLO > HELP: `HOLD 7-10: PAT
+  LENGTH`.
 
 ## Panic
 
@@ -82,8 +90,9 @@ MONO2K as its author made it.
 
 - **Splash:** no animation, the finished frame at once for 2.1 s, dark in both themes; NUBO.MOD in a pixel face
   under MONO2K; the version (`--release` below).
-- **Dim key LEDs (new in the FM-1 driver):** two levels, 10 % (steps with locks alone) and 20 % (the length keys,
-  patterns with trigs on HOME): a LED lit one or two frames of the scan in ten.
+- **Dimmed key lights.** The FM-1's key LEDs could only be on or off, so a key could show one state. The FM-1's
+  LED driver now dims them too: 10 % for a step with locks only, 20 % for the page keys in GRID and the filled
+  patterns on HOME (a LED lit in one or two of every ten scans of the keyboard, too fast to flicker).
 
 ## Build and flash
 

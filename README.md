@@ -8,20 +8,31 @@ panic and more. Built for my own use, shared as is.
 
 - **A battery indicator.** MONO2K shows no battery charge on the FM-1; NUBO.MOD does: `B99` / `B60` / `B30` in the
   header of the GLO page, read from the battery's voltage and smoothed, so you know before it dies mid-set.
-- **Control All:** in GRID, hold OCT+ and turn a knob: the parameter moves on every track at once, each from its own
-  value (SYN, AMP, FILT, FX, LFO, HOME's level and pitch); recorded as locks under REC.
-- **Trigless p-locks:** a knob recorded live on a step without a note locks it; the note going on takes it with no
-  retrigger. In GRID such steps are underlined and their keys lit dim; holding one shows its locks and blinks the
-  page buttons of the sections they are in.
-- **Two-stage panic:** SEQ + white 10 cuts everything but the reverb's tail; again, silence.
-- **Clear a track's locks:** SEQ + white 9.
-- **RELEASE OFF is a drone:** the note never lets go; STOP silences it.
-- **No autosave:** the flash is written only by SAVE while stopped (`STOP TO SAVE` while playing).
-- **Pattern length on the page keys:** in GRID, black 7–10 lit dim; held, 16 / 32 / 48 / 64 steps.
-- **Simpler screens and keys:** no pattern names (HOME lights the patterns that have trigs), no "project" on the
-  FM-1, F#5 no longer mutes in GRID, clearer hints.
-- **Dim key LEDs:** two dim levels added to the FM-1's LED driver.
-- **A new splash:** no animation, readable at once, dark in both themes.
+- **Control All.** In GRID, hold OCT+ and turn a knob: the parameter moves on all six tracks at once, each from its
+  own value. Works on the synth, amp, filter, FX and LFO pages and on track level and pitch; under REC it is
+  recorded as locks on every track.
+- **Trigless p-locks, recorded live.** Turn a knob while recording on a step without a note: it becomes a lock, and
+  the note still ringing takes it without being retriggered. Filter sweeps and other automation record the way you
+  play them. In GRID these steps are underlined and lit dim; hold one to see its locks, and the page buttons of the
+  sections it locks blink.
+- **Drones.** Turn the amp's RELEASE all the way down (`OFF`) and a note never fades out after its end. To end it:
+  the panic, or turn RELEASE back up; stopping the sequencer silences it too.
+- **Two-stage panic.** SEQ + white 10: the first press stops every sound source and lets the reverb's tail ring
+  out, the second press silences everything.
+- **Clear a track's locks** in one go: SEQ + white 9.
+- **Save only when you mean it.** Nothing is written on its own any more. Change a pattern beyond recognition live,
+  copy it to a new slot, edit steps mid-set: the saved version stays as it was, and GLO + SAVE brings it back.
+  SAVE writes only while stopped, so writing the flash never interrupts the sound.
+- **GRID reworked.** The page keys (black 7–10) are lit dim and set the pattern length when held (16 / 32 / 48 / 64
+  steps); old shortcuts left over in GRID are gone (F#5 no longer mutes the track) and the hints say what the keys
+  do now.
+- **Patterns at a glance.** Pattern names were the only thing that lit a pattern on HOME, yet there is no way to name
+  one on the device or in the web editor. Names are gone: on HOME, patterns with steps in them are lit dim and the
+  open one fully.
+- **Dimmed key lights.** The FM-1's key LEDs could only be on or off; the LED driver now dims them too (10 % and
+  20 %), so the keys can show more than one state: a step with locks only, the page keys, filled patterns.
+- **Smaller fixes.** A held SAVE reads `ALL DATA SAVED` (it said "project 1", but the FM-1 keeps banks and patterns,
+  no projects); a new splash, readable at once and dark in both themes.
 
 **Install:** build the package ([NUBO.md](NUBO.md), "Build and flash") and flash it with
 [M-Flasher](https://github.com/jvitkauskas/m-flasher): NUBO.MOD is flashed and backed up with it. Back up first.
